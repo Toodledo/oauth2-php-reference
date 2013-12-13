@@ -45,8 +45,13 @@ class Toodledo_OAuth2 {
 
 		if($this->state != $state) return null; //state did not match
 		
+		//array causes Content-Type:multipart/form-data		
 		$post = array("grant_type"=>"authorization_code","code"=>$auth_code,'vers'=>$this->app_version,'os'=>$this->os_version,'device'=>$this->device_name,'udid'=>$this->device_id);
 		
+		//str causes Content-Type:application/x-www-form-urlencoded  (both work for code exchange)
+		//$post = "grant_type=authorization_code&code=".$auth_code;
+
+
 		$ci = curl_init();
 		curl_setopt($ci, CURLOPT_RETURNTRANSFER, TRUE);
 		curl_setopt($ci, CURLOPT_USERPWD, $this->clientID . ":" . $this->clientSecret);
@@ -64,9 +69,13 @@ class Toodledo_OAuth2 {
 		Exchanges a refresh token for an access_token and new refresh_token
 	*/
 	public function getAccessTokenFromRefreshToken($refresh_token) {
-		
+	
+		//array causes Content-Type:multipart/form-data		
 		$post = array("grant_type"=>"refresh_token","refresh_token"=>$refresh_token,'vers'=>$this->app_version,'os'=>$this->os_version,'device'=>$this->device_name,'udid'=>$this->device_id);
 		
+		//str causes Content-Type:application/x-www-form-urlencoded  (both work for token exchange)
+		//$post = "grant_type=refresh_token&refresh_token=".$refresh_token;
+
 		$ci = curl_init();
 		curl_setopt($ci, CURLOPT_RETURNTRANSFER, TRUE);
 		curl_setopt($ci, CURLOPT_USERPWD, $this->clientID . ":" . $this->clientSecret);
@@ -88,6 +97,33 @@ class Toodledo_OAuth2 {
 
 		$ci = curl_init();
 		curl_setopt($ci, CURLOPT_RETURNTRANSFER, TRUE);
+		curl_setopt($ci, CURLOPT_URL, $url);
+		$response = curl_exec($ci);
+		curl_close ($ci);
+
+		return $response;
+	}
+
+
+	/*
+		Uses an access token to post something to the API
+	*/
+	public function postResource($resource_url,$access_token,$post) {
+		$url = $resource_url;
+
+		//if post is a query string it does a application/x-www-form-urlencoded post
+		//if post is an array it does a multipart/form-data post
+		//access_token cannot be in body of multipart post, so we put it in the url in this case
+		if(is_array($post)) {
+			$url .= "?access_token=".$this->accessToken;
+		} else {
+			$post.= "&access_token=".$this->accessToken;
+		}
+
+		$ci = curl_init();
+		curl_setopt($ci, CURLOPT_RETURNTRANSFER, TRUE);
+		curl_setopt($ci, CURLOPT_POST, TRUE);
+		curl_setopt($ci, CURLOPT_POSTFIELDS, $post);
 		curl_setopt($ci, CURLOPT_URL, $url);
 		$response = curl_exec($ci);
 		curl_close ($ci);

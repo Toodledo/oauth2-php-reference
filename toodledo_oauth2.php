@@ -115,9 +115,9 @@ class Toodledo_OAuth2 {
 		//if post is an array it does a multipart/form-data post
 		//access_token cannot be in body of multipart post, so we put it in the url in this case
 		if(is_array($post)) {
-			$url .= "?access_token=".$this->accessToken;
+			$url .= "?access_token=".$accessToken;
 		} else {
-			$post.= "&access_token=".$this->accessToken;
+			$post.= "&access_token=".$accessToken;
 		}
 
 		$ci = curl_init();
